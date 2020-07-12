@@ -1,0 +1,307 @@
+using System;
+
+using System.Collections;
+
+using System.Collections.Generic;
+
+using System.Configuration;
+
+using System.Data;
+
+using System.Data.SqlClient;
+
+using System.Linq;
+
+using System.Web;
+
+using System.Web.UI;
+
+using System.Web.UI.WebControls;
+
+ 
+
+ 
+
+namespace project
+
+{
+
+    public partial class Cart : System.Web.UI.Page
+
+    {
+
+        SqlConnection cn = new           
+
+        SqlConnection(ConfigurationManager.AppSettings["Connection"]);
+
+        SqlDataAdapter da = new SqlDataAdapter();
+
+        System.Collections.ArrayList myArrayList = new ArrayList();
+
+        DataSet ds = new DataSet();
+
+        string aa;
+
+        string DeleteID, UpdateID,UpdateValue;
+
+        int bb=0;
+
+        protected void Page_Load(object sender, EventArgs e)
+
+        {
+
+            if (!IsPostBack)
+
+            {
+
+                ds = (DataSet)Session["CartDS"];
+
+                View();
+
+            }
+
+        }
+
+        public void View()
+
+        {
+
+            string[] arrID = new string[20];
+
+            int Count;
+
+            if (Session["CartDS"] != null)
+
+            {
+
+                if (ds.Tables[0].Rows.Count != 0)
+
+                {
+
+                    for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+
+                    {
+
+                        arrID[i] = ds.Tables[0].Rows[i]["ID"].ToString() + ",";
+
+                        aa += arrID[i];
+
+                    }
+
+                    aa = aa.Trim(',');
+
+                    string Select;
+
+                    Select = "Select * From tbl_product where ID in (" + aa + ")";
+
+                    da = new SqlDataAdapter(Select, cn);
+
+                    DataSet ds1 = new DataSet();
+
+                    da.Fill(ds1);
+
+                    rptProductList.DataSource = ds1;
+
+                    rptProductList.DataBind();
+
+ 
+
+    //Quantity Add
+
+                   
+
+             foreach (RepeaterItem rpt in rptProductList.Items)
+
+             {
+
+                     Label lbl = (Label)rpt.FindControl("lblQuantity");
+
+                     Label lblID = (Label)rpt.FindControl("lblID");
+
+                     TextBox txtQuantity =                 
+
+                           (TextBox)rpt.FindControl("txtQuantity");
+
+                     
+
+                     lbl.Text = ds.Tables[0].Rows[rpt.ItemIndex] 
+
+                                    ["items"].ToString();
+
+ 
+
+ 
+
+                    lblID.Text = ds.Tables[0].Rows[rpt.ItemIndex]  
+
+                                  ["ID"].ToString();
+
+ 
+
+ 
+
+                    txtQuantity.Text = ds.Tables[0].Rows[rpt.ItemIndex 
+
+                                    ["items"].ToString();
+
+                }
+
+                for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+
+                {
+
+                    arrID[i] = ds.Tables[0].Rows[i]["items"].ToString();
+
+                    bb += Convert.ToInt16(arrID[i]);
+
+                }
+
+                string cc = bb.ToString();
+
+                string Cou = ds1.Tables[0].Rows.Count.ToString();
+
+                Session["ItemCount"] = cc.ToString();
+
+             }
+
+             else
+
+             {
+
+                lblCartNotselected.Text = "You Selected Not Cart";
+
+                Session["ItemCount"] = "0";
+
+             }
+
+        }
+
+        else
+
+        {
+
+            Session["ItemCount"] = "0";
+
+            lblCartNotselected.Text = "You Selected Not Cart ! !";
+
+        }
+
+    }
+
+ 
+
+ //Repeater Control ItemCommand
+
+ 
+
+        protected void rptProductList_ItemCommand(object source, RepeaterCommandEventArgs e)
+
+        {            
+
+            if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
+
+            {
+
+ 
+
+//Delete LinkButton CommandName and CommandArgument Passing
+
+ 
+
+                if (e.CommandName == "DeleteColumn")
+
+                {
+
+                    Label lblQuantity = (Label)e.Item.FindControl("lblQuantity");
+
+                    string aa = lblQuantity.Text;
+
+                    
+
+                    DeleteID = e.CommandArgument.ToString();
+
+                    ds = (DataSet)Session["CartDS"];
+
+                    DataTable dt1 = new DataTable();
+
+                    dt1 = ds.Tables[0];
+
+                    foreach (DataRow dr in ds.Tables[0].Rows)
+
+                    {
+
+                        if (dr["id"].ToString() == DeleteID)
+
+                        {
+
+         //Delete
+
+                            dr.Delete();
+
+                            ds.Tables[0].AcceptChanges();
+
+                            break;
+
+                        }
+
+                       // ds.Tables[0].AcceptChanges();
+
+                    }
+
+                    View();
+
+                    Response.Redirect("Cart.aspx");
+
+                }
+
+ 
+
+//Update LinkButton CommandName and CommandArgument Passing
+
+ 
+
+ 
+
+                if (e.CommandName == "UpdateColumn")
+
+                {
+
+                    UpdateID = e.CommandArgument.ToString();
+
+                    TextBox txtQuantity= 
+
+                           (TextBox)e.Item.FindControl("txtQuantity");
+
+                    ds = (DataSet)Session["CartDS"];
+
+                    for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+
+                    {
+
+                        if (ds.Tables[0].Rows[i]["id"].ToString() == UpdateID)
+
+                        {
+
+                           //Update
+
+                            ds.Tables[0].Rows[i]["items"] = txtQuantity.Text;
+
+                                 ds.Tables[0].AcceptChanges();
+
+                            break;
+
+                        }
+
+                    }
+
+                    View();
+
+                }
+
+            }
+
+        }
+
+    }
+
+}
